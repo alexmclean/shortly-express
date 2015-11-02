@@ -22,22 +22,39 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
-
+var sessionAuthentication = false;
 app.get('/', 
 function(req, res) {
-  res.render('index');
+  if (sessionAuthentication) {
+    res.render('index');
+  } else {
+    res.render('login');
+  }
 });
 
 app.get('/create', 
 function(req, res) {
-  res.render('index');
+  if (sessionAuthentication) {
+    res.render('index');
+  } else {
+    res.render('login');
+  }
 });
 
 app.get('/links', 
 function(req, res) {
-  Links.reset().fetch().then(function(links) {
-    res.send(200, links.models);
-  });
+  if(sessionAuthentication){
+    Links.reset().fetch().then(function(links) {  
+      res.send(200, links.models);
+    });
+  } else {
+    res.render('login');
+  }
+});
+
+app.get('/signup',
+function(req, res){
+  res.render('signup');
 });
 
 app.post('/links', 
