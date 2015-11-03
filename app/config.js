@@ -51,7 +51,6 @@ db.knex.schema.hasTable('users').then(function(exists) {
     db.knex.schema.createTable('users', function(user) {
       user.increments('id').primary();
       user.string('username', 75);
-        //TODO: change password length based on hashing algorithm
       user.string('password', 100);
       user.string('salt', 60);
     }).then(function(table){

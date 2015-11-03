@@ -4,6 +4,7 @@ var partials = require('express-partials');
 var bodyParser = require('body-parser');
 var crypto = require('crypto');
 var bcrypt = require('bcrypt-nodejs');
+var session = require('express-session');
 
 
 var db = require('./app/config');
@@ -24,9 +25,15 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
+app.use(session({ secret: 'keyboard cat', cookie: { maxAge: 60000 }}))
+
+
+
 var sessionAuthentication = false;
 app.get('/', 
 function(req, res) {
+  console.log(req.session.options);
+
   if (sessionAuthentication) {
     res.render('index');
   } else {
@@ -111,48 +118,41 @@ function(req, res) {
           salt: salt
         })
         .then(function(err){
-          //console.log('Users: ' + Users);
-          sessionAuthentication = true;
-          res.redirect('/');
+          // sessionAuthentication = true;
+          store(req.session.id, req.session, function(err) {
+            if (err) throw err;
+            res.redirect('/');
+          });
         });
     });
   });
 });
-// function(req, res) {
-//   var username = req.body.username;
-//   var password = req.body.password;
-//   new User({ username: username }).fetch().then(function(found) {
-//     if (found) {
-//       // res.send(200, found.attributes);
-//       //TODO: Sign-in logic
-//     } else {
-//         Users.create({
-//           username: username,
-//           password: password
-//         })
-//         .then(function(err){
-//           console.log('Users: ' + Users);
-//           sessionAuthentication = true;
-//           res.redirect('/');
-//         });
-//       };
-//   }); 
-// });
-// function(req, res){
-//   console.log(req.body);
-//   var username = req.body.username;
-//   var password = req.body.password;
-//   //TODO: error handling for username
 
-//   new User({username:username, password:password}).save()
-//   .then(function(model){
-//     Users.add(model);
-//   })
-//   .then(function(err){
-//     sessionAuthentication = true;
-//     res.redirect('/');
-//   });
-// });
+app.post('/login',
+function(req, res){
+  var username = req.body.username;
+  var password = req.body.password;
+  new User({username: username}).fetch()
+  .then(function(model){
+    if(model){
+      bcrypt.hash(password, model.get('salt'), 
+      function(){},
+      function(err, hash) {
+        // Store hash in your password DB.
+        console.log('Password: ' + hash + ', Salt: ' + model.get('salt'));
+        if(hash === model.get('password')){
+          sessionAuthentication = true;
+          res.redirect('/');
+        } else {
+          res.status(404).send("Incorrect Password");
+        }
+      });
+    } else {
+      //TODO redirect
+      res.status(404).send("Model Not Found");
+    }
+  });
+});
 
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
