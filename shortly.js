@@ -2,6 +2,8 @@ var express = require('express');
 var util = require('./lib/utility');
 var partials = require('express-partials');
 var bodyParser = require('body-parser');
+var crypto = require('crypto');
+var bcrypt = require('bcrypt-nodejs');
 
 
 var db = require('./app/config');
@@ -93,7 +95,64 @@ function(req, res) {
 // Write your authentication routes here
 /************************************************************/
 
+app.post('/signup',
+function(req, res) {
+  var username = req.body.username;
+  var password = req.body.password;
+  bcrypt.genSalt(10, function(err, salt) {
+    bcrypt.hash(password, salt, 
+      function(){},
+      function(err, hash) {
+        // Store hash in your password DB.
+        console.log('Password: ' + hash + ', Salt: ' + salt);
+        Users.create({
+          username: username,
+          password: hash,
+          salt: salt
+        })
+        .then(function(err){
+          //console.log('Users: ' + Users);
+          sessionAuthentication = true;
+          res.redirect('/');
+        });
+    });
+  });
+});
+// function(req, res) {
+//   var username = req.body.username;
+//   var password = req.body.password;
+//   new User({ username: username }).fetch().then(function(found) {
+//     if (found) {
+//       // res.send(200, found.attributes);
+//       //TODO: Sign-in logic
+//     } else {
+//         Users.create({
+//           username: username,
+//           password: password
+//         })
+//         .then(function(err){
+//           console.log('Users: ' + Users);
+//           sessionAuthentication = true;
+//           res.redirect('/');
+//         });
+//       };
+//   }); 
+// });
+// function(req, res){
+//   console.log(req.body);
+//   var username = req.body.username;
+//   var password = req.body.password;
+//   //TODO: error handling for username
 
+//   new User({username:username, password:password}).save()
+//   .then(function(model){
+//     Users.add(model);
+//   })
+//   .then(function(err){
+//     sessionAuthentication = true;
+//     res.redirect('/');
+//   });
+// });
 
 /************************************************************/
 // Handle the wildcard route last - if all other routes fail
