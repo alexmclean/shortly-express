@@ -93,6 +93,12 @@ h1 {
   font-size: 12px;
 }
 
+.logout {
+  margin-left: 50px;
+  font-size: 15px;
+  color: red;
+}
+
 .link .info {
   margin-left: 55px;
 }

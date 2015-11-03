@@ -63,6 +63,12 @@ function(req, res){
   res.render('signup');
 });
 
+app.get('/logout', function(req, res){
+  console.log("rerouted to logout!!");
+  authenticatedSessions[req.session.id] = false;
+  res.redirect('/');
+});
+
 app.post('/links', 
 function(req, res) {
   var uri = req.body.url;
