@@ -25,34 +25,31 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
-app.use(session({ secret: 'keyboard cat', cookie: { maxAge: 60000 }}))
+var sessionStore = new session.MemoryStore();
+app.use(session({ store: sessionStore, secret: 'keyboard cat', cookie: { maxAge: 60000 }}))
 
-
-
-var sessionAuthentication = false;
+var authenticatedSessions = {};
 app.get('/', 
 function(req, res) {
-  console.log(req.session.options);
-
-  if (sessionAuthentication) {
-    res.render('index');
+  if(util.checkUser(authenticatedSessions, req.session.id)){
+      res.render('index');
   } else {
-    res.render('login');
+      res.render('login');
   }
 });
 
 app.get('/create', 
 function(req, res) {
-  if (sessionAuthentication) {
-    res.render('index');
+  if(util.checkUser(authenticatedSessions, req.session.id)){
+      res.render('index');
   } else {
-    res.render('login');
+      res.render('login');
   }
 });
 
 app.get('/links', 
 function(req, res) {
-  if(sessionAuthentication){
+  if(util.checkUser(authenticatedSessions, req.session.id)){
     Links.reset().fetch().then(function(links) {  
       res.send(200, links.models);
     });
@@ -118,11 +115,9 @@ function(req, res) {
           salt: salt
         })
         .then(function(err){
-          // sessionAuthentication = true;
-          store(req.session.id, req.session, function(err) {
-            if (err) throw err;
-            res.redirect('/');
-          });
+          authenticatedSessions[req.session.id] = true;
+          res.redirect('/');
+          
         });
     });
   });
@@ -141,7 +136,7 @@ function(req, res){
         // Store hash in your password DB.
         console.log('Password: ' + hash + ', Salt: ' + model.get('salt'));
         if(hash === model.get('password')){
-          sessionAuthentication = true;
+          authenticatedSessions[req.session.id] = true;
           res.redirect('/');
         } else {
           res.status(404).send("Incorrect Password");
