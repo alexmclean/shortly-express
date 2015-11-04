@@ -26,7 +26,7 @@ app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static(__dirname + '/public'));
 
 var sessionStore = new session.MemoryStore();
-app.use(session({ store: sessionStore, secret: 'keyboard cat', cookie: { maxAge: 60000 }}))
+app.use(session({ store: sessionStore, secret: 'keyboard cat', cookie: { maxAge: 30/*min*/*1000*60 }}))
 
 var authenticatedSessions = {};
 app.get('/', 
@@ -50,7 +50,8 @@ function(req, res) {
 app.get('/links', 
 function(req, res) {
   if(util.checkUser(authenticatedSessions, req.session.id)){
-    Links.reset().fetch().then(function(links) {  
+    console.log("user id ", authenticatedSessions[req.session.id]);
+    Links.reset().query('where', 'user_id', '=', authenticatedSessions[req.session.id] + '').fetch().then(function(links) {  
       res.send(200, links.models);
     });
   } else {
@@ -78,7 +79,7 @@ function(req, res) {
     return res.send(404);
   }
 
-  new Link({ url: uri }).fetch().then(function(found) {
+  new Link({ url: uri, user_id: authenticatedSessions[req.session.id] }).fetch().then(function(found) {
     if (found) {
       res.send(200, found.attributes);
     } else {
@@ -91,7 +92,8 @@ function(req, res) {
         Links.create({
           url: uri,
           title: title,
-          base_url: req.headers.origin
+          base_url: req.headers.origin,
+          user_id: authenticatedSessions[req.session.id] 
         })
         .then(function(newLink) {
           res.send(200, newLink);
@@ -120,8 +122,9 @@ function(req, res) {
           password: hash,
           salt: salt
         })
-        .then(function(err){
-          authenticatedSessions[req.session.id] = true;
+        .then(function(model){
+          authenticatedSessions[req.session.id] = model.get('id');
+          console.log(authenticatedSessions[req.session.id]);
           res.redirect('/');
           
         });
@@ -142,7 +145,7 @@ function(req, res){
         // Store hash in your password DB.
         console.log('Password: ' + hash + ', Salt: ' + model.get('salt'));
         if(hash === model.get('password')){
-          authenticatedSessions[req.session.id] = true;
+          authenticatedSessions[req.session.id] = model.get('id');
           res.redirect('/');
         } else {
           res.status(404).send("Incorrect Password");
@@ -173,6 +176,7 @@ app.get('/*', function(req, res) {
       click.save().then(function() {
         link.set('visits', link.get('visits')+1);
         link.save().then(function() {
+
           return res.redirect(link.get('url'));
         });
       });

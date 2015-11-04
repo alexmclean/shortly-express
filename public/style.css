@@ -94,9 +94,13 @@ h1 {
 }
 
 .logout {
-  margin-left: 50px;
+  float:right;
   font-size: 15px;
   color: red;
+}
+
+.logout:hover{
+  background-color: blue;
 }
 
 .link .info {

@@ -23,6 +23,7 @@ db.knex.schema.hasTable('urls').then(function(exists) {
       link.string('title', 255);
       link.integer('visits');
         //TODO: add a reference to user
+      link.integer('user_id');
       link.timestamps();
     }).then(function (table) {
       console.log('Created Table', table);
